@@ -8,7 +8,7 @@ services:
             - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
         depends_on:
             - discussion-api
-            - db
+            - discussion-db
 
     discussion-api:
         build:
@@ -17,19 +17,42 @@ services:
         volumes:
             - ../discussion-api:/var/www/html
         environment:
-            DATABASE_URL: postgres://postgres:password@db:5432/my_database
+            DATABASE_URL: postgres://postgres:password@discussion-db:5432/discussion
+            OUTBOX_TRANSPORT_DSN: doctrine://default?table_name=outbox
+            OUTBOX_FAILED_TRANSPORT_DSN: doctrine://default?table_name=outbox_failed
+            AMQP_TRANSPORT_DSN: amqp://evaneos:evaneos@rabbitmq:5672/%2f/discussion
 
-    db:
+    discussion-db:
         image: postgres:13
         environment:
             POSTGRES_PASSWORD: password
-            POSTGRES_DB: my_database
+            POSTGRES_DB: discussion
+        expose:
+            - "5432"
+        ports:
+            - "5432:5432"
 
-    gatling:
-        image: denvazh/gatling
-        platform: linux/amd64
-        volumes:
-            - ../gatling:/opt/gatling/user-files
-        entrypoint: [ "/opt/gatling/bin/gatling.sh", "-s", "simulations.TransferSimulation" ]
-        depends_on:
-            - nginx
+    rabbitmq:
+        image: rabbitmq:management
+        environment:
+            RABBITMQ_DEFAULT_USER: evaneos
+            RABBITMQ_DEFAULT_PASS: evaneos
+        expose:
+            - "15672"
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+        healthcheck:
+            test: rabbitmq-diagnostics check_port_connectivity
+            interval: 10s
+            timeout:  5s
+            retries:  5
+
+#    gatling:
+#        image: denvazh/gatling
+#        platform: linux/amd64
+#        volumes:
+#            - ../gatling:/opt/gatling/user-files
+#        entrypoint: [ "/opt/gatling/bin/gatling.sh", "-s", "simulations.TransferSimulation" ]
+#        depends_on:
+#            - nginx

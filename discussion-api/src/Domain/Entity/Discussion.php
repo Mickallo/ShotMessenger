@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Entity;
+namespace App\Domain\Entity;
 
-use App\Repository\DiscussionRepository;
+use App\Domain\Repository\DiscussionRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: DiscussionRepository::class)]

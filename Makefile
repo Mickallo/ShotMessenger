@@ -11,13 +11,16 @@ help: ## Affiche cette aide
 
 install: composer-install docker-build docker-up
 
-start: migrations-migrate
+start: migrations-migrate setup-transports
+
+setup-transports:
+	@$(DOCKER_COMPOSE) exec discussion-api php bin/console messenger:setup-transports
 
 composer-install: ## Installe les dépendances Composer
 	@echo "Téléchargement de l'image Composer..."
 	@docker pull composer:latest
 	@echo "Installation des dépendances Composer..."
-	@docker run --rm -v $(PWD)/discussion-api:/discussion-api -w /discussion-api composer install
+	@docker run --rm -v $(PWD)/discussion-api:/discussion-api -w /discussion-api composer install --ignore-platform-reqs
 
 composer-update: ## Met à jour les dépendances Composer
 	@echo "Téléchargement de l'image Composer..."
@@ -46,6 +49,11 @@ logs: ## Affiche les logs des conteneurs
 
 discussion-shell: ## Ouvre un shell sur le container discussion-api
 	@$(DOCKER_COMPOSE) run discussion-api bash
+
+discussion-consume-outbox:
+	@$(DOCKER_COMPOSE) exec discussion-api php bin/console messenger:consume outbox -vv
+discussion-consume-event:
+	@$(DOCKER_COMPOSE) exec discussion-api php bin/console messenger:consume event -vv
 
 gatling-test: ## Exécute les tests de charge Gatling
 	@echo "Exécution des tests de charge Gatling..."

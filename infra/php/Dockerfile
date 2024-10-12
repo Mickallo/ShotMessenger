@@ -4,8 +4,12 @@ FROM php:8.2-fpm
 RUN apt-get update && apt-get install -y \
     libicu-dev \
     libpq-dev \
+    librabbitmq-dev \
     && docker-php-ext-configure intl \
-    && docker-php-ext-install intl pdo pdo_pgsql
+    && docker-php-ext-install intl pdo pdo_pgsql \
+    && pecl install amqp \
+    && docker-php-ext-enable amqp
+
 # Installer Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

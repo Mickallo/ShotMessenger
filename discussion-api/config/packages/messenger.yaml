@@ -1,0 +1,49 @@
+framework:
+    messenger:
+        serializer:
+            default_serializer: messenger.transport.symfony_serializer
+            symfony_serializer:
+                format: json
+        failure_transport: failed
+        transports:
+            inbound:
+                dsn: '%env(AMQP_TRANSPORT_DSN)%'
+                options:
+                    exchange:
+                        name: discussion.event
+                    queues:
+                        discussion.inbound: ~
+
+            outbox:
+                dsn: '%env(OUTBOX_TRANSPORT_DSN)%'
+                failure_transport: failed_outbox
+
+            event:
+                dsn: '%env(AMQP_TRANSPORT_DSN)%'
+                options:
+                    auto_setup: false
+                    exchange:
+                        name: discussion.event
+                    queues:
+                        discussion.event: ~
+
+            failed:
+                dsn: '%env(AMQP_TRANSPORT_DSN)%'
+                options:
+                    exchange:
+                        name: discussion.failed
+                    queues:
+                        discussion.failed: ~
+
+            failed_outbox:
+                dsn: '%env(OUTBOX_FAILED_TRANSPORT_DSN)%'
+
+        default_bus: command.bus
+        buses:
+            command.bus:
+                middleware:
+                    - doctrine_transaction
+            outbox.bus:
+                middleware:
+                    - App\Infrastructure\Middleware\AddOutboxTransportStampMiddleware
+            event.bus: ~
