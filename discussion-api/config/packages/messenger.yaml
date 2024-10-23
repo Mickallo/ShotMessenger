@@ -56,12 +56,13 @@ framework:
 #                default_middleware: false
 #                middleware:
 #                    # Before
-#                    -   add_bus_name_stamp_middleware: [ 'outbox.bus' ]
+#                    -  add_bus_name_stamp_middleware: [ 'outbox.bus' ]
 #                    - reject_redelivered_message_middleware
 #                    - dispatch_after_current_bus
 #                    - doctrine_transaction # OVERRIDE
 #                    - failed_message_processing_middleware
 #                    # Custom Middleware
-#                    - App\Infrastructure\Middleware\OutboxMiddleware                # After
+#                    - App\Infrastructure\Middleware\OutboxMiddleware
+#                    # After
 #                    - send_message
 #                    - handle_message
