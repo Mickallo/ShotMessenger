@@ -16,9 +16,11 @@ start: migrations-migrate setup-transports
 setup-transports:
 	@$(DOCKER_COMPOSE) exec discussion-api php bin/console messenger:setup-transports
 
-composer-install: ## Installe les dépendances Composer
+composer-pull:
 	@echo "Téléchargement de l'image Composer..."
 	@docker pull composer:latest
+
+composer-install: ## Installe les dépendances Composer
 	@echo "Installation des dépendances Composer..."
 	@docker run --rm -v $(PWD)/discussion-api:/discussion-api -w /discussion-api composer install --ignore-platform-reqs
 
@@ -51,9 +53,9 @@ discussion-shell: ## Ouvre un shell sur le container discussion-api
 	@$(DOCKER_COMPOSE) run discussion-api bash
 
 discussion-consume-outbox:
-	@$(DOCKER_COMPOSE) exec discussion-api php bin/console messenger:consume outbox -vv
+	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume outbox -l 1 -vv
 discussion-consume-event:
-	@$(DOCKER_COMPOSE) exec discussion-api php bin/console messenger:consume event -vv
+	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume event -l 1  -vv
 
 gatling-test: ## Exécute les tests de charge Gatling
 	@echo "Exécution des tests de charge Gatling..."

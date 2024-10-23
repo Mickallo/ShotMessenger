@@ -20,6 +20,7 @@ services:
             DATABASE_URL: postgres://postgres:password@discussion-db:5432/discussion
             OUTBOX_TRANSPORT_DSN: doctrine://default?table_name=outbox
             OUTBOX_FAILED_TRANSPORT_DSN: doctrine://default?table_name=outbox_failed
+            OUTBOX_SENT_TRANSPORT_DSN: doctrine://default?table_name=outbox_sent
             AMQP_TRANSPORT_DSN: amqp://evaneos:evaneos@rabbitmq:5672/%2f/discussion
 
     discussion-db:

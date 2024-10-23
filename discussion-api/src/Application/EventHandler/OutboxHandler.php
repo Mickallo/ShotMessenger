@@ -19,6 +19,7 @@ final class OutboxHandler
     public function __invoke(Event $message): void
     {
         //throw new \Exception('dispatch error');
+
         $this->eventBus->dispatch(
             $message,
             [new TransportNamesStamp('event')]

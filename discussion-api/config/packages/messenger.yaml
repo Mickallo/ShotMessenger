@@ -6,18 +6,15 @@ framework:
                 format: json
         failure_transport: failed
         transports:
-            inbound:
+    ######### À METTRE DANS UN AUTRE SERVICES #########
+            request.inbound:
                 dsn: '%env(AMQP_TRANSPORT_DSN)%'
                 options:
                     exchange:
                         name: discussion.event
                     queues:
-                        discussion.inbound: ~
-
-            outbox:
-                dsn: '%env(OUTBOX_TRANSPORT_DSN)%'
-                failure_transport: failed_outbox
-
+                        request.inbound: ~
+    ###################################################
             event:
                 dsn: '%env(AMQP_TRANSPORT_DSN)%'
                 options:
@@ -26,7 +23,6 @@ framework:
                         name: discussion.event
                     queues:
                         discussion.event: ~
-
             failed:
                 dsn: '%env(AMQP_TRANSPORT_DSN)%'
                 options:
@@ -34,10 +30,13 @@ framework:
                         name: discussion.failed
                     queues:
                         discussion.failed: ~
-
-            failed_outbox:
+            outbox:
+                dsn: '%env(OUTBOX_TRANSPORT_DSN)%'
+                failure_transport: outbox_failed
+            outbox_failed:
                 dsn: '%env(OUTBOX_FAILED_TRANSPORT_DSN)%'
-
+            outbox_sent:
+                dsn: '%env(OUTBOX_SENT_TRANSPORT_DSN)%'
         default_bus: command.bus
         buses:
             command.bus:
@@ -45,5 +44,36 @@ framework:
                     - doctrine_transaction
             outbox.bus:
                 middleware:
+                    - doctrine_transaction
                     - App\Infrastructure\Middleware\AddOutboxTransportStampMiddleware
-            event.bus: ~
+            event.bus:
+                middleware:
+                    - App\Infrastructure\Middleware\PublishToOutboxSentTransportMiddleware
+
+
+            # GESTION DE LA TRANSACTION POUR LES FAILED
+#            SOLUTION 1 ça va finir par passer
+#            outbox:
+#                dsn:               '%env(OUTBOX_TRANSPORT_DSN)%'
+#                failure_transport: outbox_failed
+#                retry_strategy:
+#                    max_retries: 99999999 # Un grand nombre de retries
+#                    delay:      10000 # Délai de départ en millisecondes (10 seconde ici)
+#                    max_delay:  2592000000 # Délai max d'environ 1 mois (30 jours)
+#                    multiplier: 1.0
+#
+#            SOLUTION 2 ceinture & bretelle
+#            outbox.bus:
+#                default_middleware: false
+#                middleware:
+#                    # Before
+#                    -   add_bus_name_stamp_middleware: [ 'outbox.bus' ]
+#                    - reject_redelivered_message_middleware
+#                    - dispatch_after_current_bus
+#                    - doctrine_transaction # OVERRIDE
+#                    - failed_message_processing_middleware
+#                    # Custom Middleware
+#                    - App\Infrastructure\Middleware\AddOutboxTransportStampMiddleware
+#                    # After
+#                    - send_message
+#                    - handle_message

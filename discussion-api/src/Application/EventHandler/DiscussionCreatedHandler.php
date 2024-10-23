@@ -10,6 +10,6 @@ final class DiscussionCreatedHandler
 {
     public function __invoke(DiscussionCreated $message): void
     {
-       throw new \Exception('Event Handler Error');
+         //throw new \Exception('critical fail');
     }
 }
