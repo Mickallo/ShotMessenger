@@ -62,7 +62,6 @@ framework:
 #                    - doctrine_transaction # OVERRIDE
 #                    - failed_message_processing_middleware
 #                    # Custom Middleware
-#                    - App\Infrastructure\Middleware\AddOutboxTransportStampMiddleware
-#                    - App\Infrastructure\Middleware\PublishEventMiddleware                  # After
+#                    - App\Infrastructure\Middleware\OutboxMiddleware                # After
 #                    - send_message
 #                    - handle_message
