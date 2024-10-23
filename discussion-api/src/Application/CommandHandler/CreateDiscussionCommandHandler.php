@@ -9,13 +9,14 @@ use App\Domain\Entity\Discussion;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Uid\Uuid;
 
 #[AsMessageHandler(bus: 'command.bus')]
 class CreateDiscussionCommandHandler
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly MessageBusInterface $outboxBus
+        private readonly MessageBusInterface $eventBus
     ){
     }
 
@@ -25,8 +26,8 @@ class CreateDiscussionCommandHandler
         $discussion->setDossierId($command->id);
         $this->entityManager->persist($discussion);
 
-        $this->outboxBus->dispatch(
-            new DiscussionCreated($discussion->getId(),$discussion->getDossierId())
+        $this->eventBus->dispatch(
+            new DiscussionCreated(Uuid::v4(), $discussion->getId(),$discussion->getDossierId())
         );
     }
 }

@@ -54,8 +54,8 @@ discussion-shell: ## Ouvre un shell sur le container discussion-api
 
 discussion-consume-outbox:
 	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume outbox -l 1 -vv
-discussion-consume-event:
-	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume event -l 1  -vv
+discussion-consume-outbox_failed:
+	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume outbox_failed -l 1  -vv
 
 gatling-test: ## Exécute les tests de charge Gatling
 	@echo "Exécution des tests de charge Gatling..."

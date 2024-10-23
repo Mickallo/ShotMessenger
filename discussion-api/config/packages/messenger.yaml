@@ -25,6 +25,8 @@ framework:
                         discussion.event: ~
             failed:
                 dsn: '%env(AMQP_TRANSPORT_DSN)%'
+                retry_strategy:
+                    max_retries: 99999999
                 options:
                     exchange:
                         name: discussion.failed
@@ -35,6 +37,8 @@ framework:
                 failure_transport: outbox_failed
             outbox_failed:
                 dsn: '%env(OUTBOX_FAILED_TRANSPORT_DSN)%'
+                retry_strategy:
+                    max_retries: 99999999
             outbox_sent:
                 dsn: '%env(OUTBOX_SENT_TRANSPORT_DSN)%'
         default_bus: command.bus
@@ -42,28 +46,13 @@ framework:
             command.bus:
                 middleware:
                     - doctrine_transaction
-            outbox.bus:
-                middleware:
-                    - doctrine_transaction
-                    - App\Infrastructure\Middleware\AddOutboxTransportStampMiddleware
             event.bus:
                 middleware:
-                    - App\Infrastructure\Middleware\PublishToOutboxSentTransportMiddleware
+                    - doctrine_transaction
+                    - App\Infrastructure\Middleware\OutboxMiddleware
 
-
-            # GESTION DE LA TRANSACTION POUR LES FAILED
-#            SOLUTION 1 ça va finir par passer
-#            outbox:
-#                dsn:               '%env(OUTBOX_TRANSPORT_DSN)%'
-#                failure_transport: outbox_failed
-#                retry_strategy:
-#                    max_retries: 99999999 # Un grand nombre de retries
-#                    delay:      10000 # Délai de départ en millisecondes (10 seconde ici)
-#                    max_delay:  2592000000 # Délai max d'environ 1 mois (30 jours)
-#                    multiplier: 1.0
-#
-#            SOLUTION 2 ceinture & bretelle
-#            outbox.bus:
+#            SOLUTION ceinture & bretelle
+#            event.bus:
 #                default_middleware: false
 #                middleware:
 #                    # Before
@@ -74,6 +63,6 @@ framework:
 #                    - failed_message_processing_middleware
 #                    # Custom Middleware
 #                    - App\Infrastructure\Middleware\AddOutboxTransportStampMiddleware
-#                    # After
+#                    - App\Infrastructure\Middleware\PublishEventMiddleware                  # After
 #                    - send_message
 #                    - handle_message
