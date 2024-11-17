@@ -10,6 +10,13 @@ RUN apt-get update && apt-get install -y \
     && pecl install amqp \
     && docker-php-ext-enable amqp
 
+# Installer les bibliothèques nécessaires à zip + unzip
+RUN apt-get update && apt-get install -y \
+    zlib1g-dev \
+    libzip-dev \
+    unzip \
+    && docker-php-ext-install zip
+
 # Installer Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

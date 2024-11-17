@@ -3,32 +3,32 @@
 # Commandes Docker
 DOCKER_COMPOSE = docker-compose -f infra/docker-compose.yml
 
-# Tâches
-.PHONY: help install docker-build docker-up docker-down composer-install composer-update logs discussion-shell
-
 help: ## Affiche cette aide
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-install: composer-install docker-build docker-up
+install: docker-build docker-up composer-install## install
 
-start: migrations-migrate setup-transports
+start: setup-transports migrations-migrate ## start
+
+reroll: docker-down docker-up
 
 setup-transports:
 	@$(DOCKER_COMPOSE) exec discussion-api php bin/console messenger:setup-transports
+	@$(DOCKER_COMPOSE) exec request-api php bin/console messenger:setup-transports
 
-composer-pull:
+composer-pull: ## composer-pull
 	@echo "Téléchargement de l'image Composer..."
 	@docker pull composer:latest
 
 composer-install: ## Installe les dépendances Composer
 	@echo "Installation des dépendances Composer..."
-	@docker run --rm -v $(PWD)/discussion-api:/discussion-api -w /discussion-api composer install --ignore-platform-reqs
+	@$(DOCKER_COMPOSE) exec discussion-api composer install
+	@$(DOCKER_COMPOSE) exec request-api composer install
 
 composer-update: ## Met à jour les dépendances Composer
-	@echo "Téléchargement de l'image Composer..."
-	@docker pull composer:latest
-	@echo "Mise à jour des dépendances Composer..."
-	@docker run --rm -v $(PWD)/discussion-api:/discussion-api -w /discussion-api composer update
+	@echo "Update des dépendances Composer..."
+	@$(DOCKER_COMPOSE) exec discussion-api composer update
+	@$(DOCKER_COMPOSE) exec request-api composer update
 
 docker-build: ## Construit les conteneurs Docker
 	@echo "Construction des conteneurs Docker..."
@@ -45,18 +45,29 @@ docker-down: ## Arrête les conteneurs Docker
 migrations-migrate: ## Exécute les migrations Doctrine
 	@echo "Exécution des migrations Doctrine..."
 	@$(DOCKER_COMPOSE) exec discussion-api php bin/console doctrine:migrations:migrate --no-interaction
+	@$(DOCKER_COMPOSE) exec request-api php bin/console doctrine:migrations:migrate --no-interaction
 
 logs: ## Affiche les logs des conteneurs
 	@$(DOCKER_COMPOSE) logs -f
 
-discussion-shell: ## Ouvre un shell sur le container discussion-api
+discussion-api-shell: ## Ouvre un shell sur le container discussion-api
 	@$(DOCKER_COMPOSE) run discussion-api bash
+discussion-api-consume-event_outbox:
+	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume event_outbox -l 1 -vvv
+discussion-api-consume-event_outbox_failed:
+	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume event_outbox_failed -l 1 -vvv
+discussion-api-consume-event:
+	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume event -l 1 --bus event.bus -vvv
+discussion-api-consume-failed:
+	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume failed -l 1 --bus event.bus -vvv
 
-discussion-consume-outbox:
-	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume outbox -l 1 -vv
-discussion-consume-outbox_failed:
-	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume outbox_failed -l 1  -vv
-
-gatling-test: ## Exécute les tests de charge Gatling
-	@echo "Exécution des tests de charge Gatling..."
-	@$(DOCKER_COMPOSE) run gatling
+request-api-shell: ## Ouvre un shell sur le container request-api
+	@$(DOCKER_COMPOSE) run request-api bash
+request-api-consume-event_outbox:
+	@$(DOCKER_COMPOSE) exec request-api php bin/console --profile messenger:consume event_outbox -l 1 -vvv
+request-api-consume-event_outbox_failed:
+	@$(DOCKER_COMPOSE) exec request-api php bin/console --profile messenger:consume event_outbox_failed -l 1 -vvv
+request-api-consume-event:
+	@$(DOCKER_COMPOSE) exec request-api php bin/console --profile messenger:consume event -l 1 --bus event.bus -vvv
+request-api-consume-failed:
+	@$(DOCKER_COMPOSE) exec request-api php bin/console --profile messenger:consume failed -l 1 --bus event.bus -vvv

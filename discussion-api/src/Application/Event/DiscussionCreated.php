@@ -10,4 +10,9 @@ final class DiscussionCreated implements Event
          public readonly int $dossierId,
      ) {
      }
+
+    public function uuid(): string
+    {
+        return $this->uuid;
+    }
 }

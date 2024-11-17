@@ -4,11 +4,13 @@ services:
         ports:
             - "8000:80"
         volumes:
-            - ../discussion-api:/var/www/html:ro
+            - ../discussion-api:/var/www/discussion-api:ro
+            - ../request-api:/var/www/request-api:ro
             - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
         depends_on:
             - discussion-api
-            - discussion-db
+            - request-api
+            - evaneos-db
 
     discussion-api:
         build:
@@ -17,29 +19,40 @@ services:
         volumes:
             - ../discussion-api:/var/www/html
         environment:
-            DATABASE_URL: postgres://postgres:password@discussion-db:5432/discussion
-            OUTBOX_TRANSPORT_DSN: doctrine://default?table_name=outbox
-            OUTBOX_FAILED_TRANSPORT_DSN: doctrine://default?table_name=outbox_failed
-            OUTBOX_SENT_TRANSPORT_DSN: doctrine://default?table_name=outbox_sent
-            AMQP_TRANSPORT_DSN: amqp://evaneos:evaneos@rabbitmq:5672/%2f/discussion
+            DATABASE_URL: postgres://postgres:password@evaneos-db:5432/discussion-api
+            OUTBOX_TRANSPORT_DSN: doctrine://default?table_name=event.outbox
+            OUTBOX_FAILED_TRANSPORT_DSN: doctrine://default?table_name=event.failed
+            OUTBOX_SENT_TRANSPORT_DSN: doctrine://default?table_name=event.sent
+            AMQP_TRANSPORT_DSN: amqp://evaneos:evaneos@rabbitmq:5672/%2f/discussion-api
 
-    discussion-db:
+    request-api:
+        build:
+            context: ../request-api
+            dockerfile: ../infra/php/Dockerfile
+        volumes:
+            - ../request-api:/var/www/html
+        environment:
+            DATABASE_URL: postgres://postgres:password@evaneos-db:5432/request-api
+            OUTBOX_TRANSPORT_DSN: doctrine://default?table_name=event.outbox
+            OUTBOX_FAILED_TRANSPORT_DSN: doctrine://default?table_name=event.failed
+            OUTBOX_SENT_TRANSPORT_DSN: doctrine://default?table_name=event.sent
+            AMQP_TRANSPORT_DSN: amqp://evaneos:evaneos@rabbitmq:5672/%2f/request-api
+
+    evaneos-db:
         image: postgres:13
         environment:
             POSTGRES_PASSWORD: password
-            POSTGRES_DB: discussion
-        expose:
-            - "5432"
+            POSTGRES_DB: public
         ports:
             - "5432:5432"
+        volumes:
+            - ./postgres/init-db:/docker-entrypoint-initdb.d
 
     rabbitmq:
         image: rabbitmq:management
         environment:
             RABBITMQ_DEFAULT_USER: evaneos
             RABBITMQ_DEFAULT_PASS: evaneos
-        expose:
-            - "15672"
         ports:
             - "5672:5672"
             - "15672:15672"
@@ -48,12 +61,3 @@ services:
             interval: 10s
             timeout:  5s
             retries:  5
-
-#    gatling:
-#        image: denvazh/gatling
-#        platform: linux/amd64
-#        volumes:
-#            - ../gatling:/opt/gatling/user-files
-#        entrypoint: [ "/opt/gatling/bin/gatling.sh", "-s", "simulations.TransferSimulation" ]
-#        depends_on:
-#            - nginx

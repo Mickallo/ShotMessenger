@@ -6,33 +6,24 @@ framework:
                 format: json
         failure_transport: failed
         transports:
-            ## bind discussion-api event queue to request-api exchange
-            inbound.request-api.event:
-                dsn: '%env(AMQP_TRANSPORT_DSN)%'
-                options:
-                    exchange:
-                        name: request-api.event
-                    queues:
-                        discussion-api.event: ~
-
             ## AMQP TRANSPORT
             event:
                 dsn: '%env(AMQP_TRANSPORT_DSN)%'
                 options:
                     auto_setup: false
                     exchange:
-                        name: discussion-api.event
+                        name: request-api.event
                     queues:
-                        discussion-api.event: ~
+                        request-api.event: ~
             failed:
                 dsn: '%env(AMQP_TRANSPORT_DSN)%'
                 retry_strategy:
                     max_retries: 99999999
                 options:
                     exchange:
-                        name: discussion-api.failed
+                        name: request-api.failed
                     queues:
-                        discussion-api.failed: ~
+                        request-api.failed: ~
 
             ## DOCTRINE TRANSPORT
             event_outbox:
@@ -55,6 +46,28 @@ framework:
                     allow_no_handlers: true
                 middleware:
                     - doctrine_transaction
-                    - App\Infrastructure\Middleware\ControlIdempotenceMiddleware
-                    - App\Infrastructure\Middleware\SendFromOutboxMiddleware
-                    - App\Infrastructure\Middleware\AddOutboxStampMiddleware
+                    - App\Infrastructure\Outbox\Middleware\ControlIdempotenceMiddleware
+                    - App\Infrastructure\Outbox\Middleware\SendFromOutboxMiddleware
+                    - App\Infrastructure\Outbox\Middleware\AddOutboxStampMiddleware
+
+
+#            SOLUTION ceinture & bretelles
+#    on wrap aussi l'envoi au transport outbox_failed dans la transaction
+#
+#            event.bus:
+#                default_middleware: false
+#                middleware:
+#                    - add_bus_name_stamp_middleware: [ 'outbox.bus' ]
+#                    - reject_redelivered_message_middleware
+#                    - dispatch_after_current_bus
+#                    ## OVERRIDE ##
+#                    - doctrine_transaction
+#                    ## OVERRIDE ##
+#                    - failed_message_processing_middleware
+
+#                    - App\Infrastructure\Middleware\ControlIdempotenceMiddleware
+#                    - App\Infrastructure\Middleware\SendFromOutboxMiddleware
+#                    - App\Infrastructure\Middleware\AddOutboxStampMiddleware
+
+#                    - send_message
+#                    - handle_message
