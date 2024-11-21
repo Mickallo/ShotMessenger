@@ -1,3 +1,4 @@
 <h2> ShotsMessenger </h2>
 
-wip
+make install
+puis make start
