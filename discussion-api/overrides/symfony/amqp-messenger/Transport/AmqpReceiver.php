@@ -36,17 +36,7 @@ class AmqpReceiver implements QueueReceiverInterface, MessageCountAwareInterface
         $this->serializer = $serializer ?? new PhpSerializer();
     }
 
-//    public function get(): iterable
-//    {
-//        yield from $this->getFromQueues($this->connection->getQueueNames());
-//    }
-//
-//    public function getFromQueues(array $queueNames): iterable
-//    {
-//        foreach ($queueNames as $queueName) {
-//            yield from $this->getEnvelope($queueName);
-//        }
-//    }
+
 
     private function getEnvelope(string $queueName): iterable
     {
@@ -143,6 +133,19 @@ class AmqpReceiver implements QueueReceiverInterface, MessageCountAwareInterface
 
 
 //OVERRIDE
+
+//    public function get(): iterable
+//    {
+//        yield from $this->getFromQueues($this->connection->getQueueNames());
+//    }
+//
+//    public function getFromQueues(array $queueNames): iterable
+//    {
+//        foreach ($queueNames as $queueName) {
+//            yield from $this->getEnvelope($queueName);
+//        }
+//    }
+
     public function get(): iterable
     {
         $queueNames = $this->connection->getQueueNames();
