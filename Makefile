@@ -71,3 +71,6 @@ request-api-consume-event:
 	@$(DOCKER_COMPOSE) exec request-api php bin/console --profile messenger:consume event -l 1 --bus event.bus -vvv
 request-api-consume-failed:
 	@$(DOCKER_COMPOSE) exec request-api php bin/console --profile messenger:consume failed -l 1 --bus event.bus -vvv
+
+disc-test:
+	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume event -vvv

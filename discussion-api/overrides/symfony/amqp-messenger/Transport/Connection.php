@@ -595,7 +595,7 @@ class Connection
 
 
     //OVERRIDE
-    public function consumeFromQueue(string $queueName, callable $callback): void
+    public function consumeFromQueue(string $queueName, callable $callback): iterable
     {
         $this->clearWhenDisconnected();
 
@@ -605,10 +605,16 @@ class Connection
 
         $queue = $this->queue($queueName);
 
+        file_put_contents('debug.log','before consume'.PHP_EOL, FILE_APPEND);
+
+        $queue->consume($callback);
         // Configure consume pour déclencher le callback sur chaque message
         $queue->consume(function (\AMQPEnvelope $envelope, \AMQPQueue $queue) use ($callback) {
+            file_put_contents('debug.log','callback 1'.PHP_EOL, FILE_APPEND);
             $callback($envelope);
+            file_put_contents('debug.log','after callback'.PHP_EOL, FILE_APPEND);
             $queue->ack($envelope->getDeliveryTag());
+            return false;
         });
     }
 }

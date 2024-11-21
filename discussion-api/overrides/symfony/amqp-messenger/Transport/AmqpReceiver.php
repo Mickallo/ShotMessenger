@@ -31,7 +31,7 @@ class AmqpReceiver implements QueueReceiverInterface, MessageCountAwareInterface
 
     public function __construct(
         private Connection $connection,
-        ?SerializerInterface $serializer = null,
+        ?SerializerInterface $serializer = null
     ) {
         $this->serializer = $serializer ?? new PhpSerializer();
     }
@@ -139,54 +139,34 @@ class AmqpReceiver implements QueueReceiverInterface, MessageCountAwareInterface
 //        yield from $this->getFromQueues($this->connection->getQueueNames());
 //    }
 //
-//    public function getFromQueues(array $queueNames): iterable
-//    {
-//        foreach ($queueNames as $queueName) {
-//            yield from $this->getEnvelope($queueName);
-//        }
-//    }
+    public function getFromQueues(array $queueNames): iterable
+    {
+        foreach ($queueNames as $queueName) {
+            yield from $this->getEnvelope($queueName);
+        }
+    }
 
     public function get(): iterable
     {
         $queueNames = $this->connection->getQueueNames();
-
+        file_put_contents('debug.log','start get'.PHP_EOL);
         foreach ($queueNames as $queueName) {
+            file_put_contents('debug.log',$queueName.PHP_EOL,FILE_APPEND);
+            $serializer = $this->serializer;
             $this->connection->consumeFromQueue(
                 $queueName,
-                function ($amqpEnvelope) use ($queueName) {
-                    yield $this->createEnvelopeFromAmqpEnvelope(
-                        $amqpEnvelope,
-                        $queueName
-                    );
+                function ($amqpEnvelope) use ($queueName, $serializer) {
+                    file_put_contents('debug.log','callback 2'.PHP_EOL, FILE_APPEND);
+
+                    $body = $amqpEnvelope->getBody();
+                    $envelope = $serializer->decode([
+                        'body' => $body,
+                        'headers' => $amqpEnvelope->getHeaders(),
+                    ]);
+
+                    yield $envelope->with(new AmqpReceivedStamp($amqpEnvelope, $queueName));
                 }
             );
         }
-    }
-
-    public function getFromQueues(array $queueNames): iterable
-    {
-        foreach ($queueNames as $queueName) {
-            $this->connection->consumeFromQueue(
-                $queueName,
-                function ($amqpEnvelope) use ($queueName) {
-                    yield $this->createEnvelopeFromAmqpEnvelope(
-                        $amqpEnvelope,
-                        $queueName
-                    );
-                }
-            );
-        }
-    }
-
-    private function createEnvelopeFromAmqpEnvelope(\AMQPEnvelope $amqpEnvelope, string $queueName): Envelope
-    {
-        $body = $amqpEnvelope->getBody();
-
-        $envelope = $this->serializer->decode([
-            'body' => $body,
-            'headers' => $amqpEnvelope->getHeaders(),
-        ]);
-
-        return $envelope->with(new AmqpReceivedStamp($amqpEnvelope, $queueName));
     }
 }

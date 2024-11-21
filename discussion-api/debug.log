@@ -1,0 +1,5 @@
+start get
+discussion-api.event
+before consume
+callback 1
+after callback
