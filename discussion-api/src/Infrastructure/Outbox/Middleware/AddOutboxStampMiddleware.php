@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Infrastructure\Middleware;
+namespace App\Infrastructure\Outbox\Middleware;
 
 use App\Infrastructure\Outbox\Stamp\OutboxStamp;
 use Symfony\Component\Messenger\Envelope;

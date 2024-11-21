@@ -6,6 +6,7 @@ use App\Application\Command\CreateDiscussionCommand;
 use App\Application\Event\RequestCreated;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Uid\Uuid;
 
 #[AsMessageHandler(bus: 'event.bus')]
 final readonly class RequestCreatedHandler
@@ -20,7 +21,7 @@ final readonly class RequestCreatedHandler
     {
         $this->commandBus->dispatch(
             new CreateDiscussionCommand(
-                $event->requestId
+                $event->requestUuid
             )
         );
     }

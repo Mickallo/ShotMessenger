@@ -41,7 +41,7 @@ class DiscussionController extends AbstractController
 
             $this->commandBus->dispatch(
                 new CreateDiscussionCommand(
-                    $form->get('dossierId')->getData()
+                    $form->get('uuid')->getData()
                 )
             );
 
@@ -54,7 +54,7 @@ class DiscussionController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'app_discussion_show', methods: ['GET'])]
+    #[Route('/{uuid}', name: 'app_discussion_show', methods: ['GET'])]
     public function show(Discussion $discussion): Response
     {
         return $this->render('discussion/show.html.twig', [
@@ -62,7 +62,7 @@ class DiscussionController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}/edit', name: 'app_discussion_edit', methods: ['GET', 'POST'])]
+    #[Route('/{uuid}/edit', name: 'app_discussion_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Discussion $discussion, EntityManagerInterface $entityManager): Response
     {
         $form = $this->createForm(DiscussionType::class, $discussion);
@@ -80,10 +80,10 @@ class DiscussionController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'app_discussion_delete', methods: ['POST'])]
+    #[Route('/{uuid}', name: 'app_discussion_delete', methods: ['POST'])]
     public function delete(Request $request, Discussion $discussion, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$discussion->getId(), $request->getPayload()->getString('_token'))) {
+        if ($this->isCsrfTokenValid('delete'.$discussion->getUuid(), $request->getPayload()->getString('_token'))) {
             $entityManager->remove($discussion);
             $entityManager->flush();
         }

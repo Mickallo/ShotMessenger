@@ -33,6 +33,7 @@ readonly class SendFromOutboxMiddleware implements MiddlewareInterface
         $this->eventTransport->send($cleanEnvelope);
         // Save in sent table
         $this->eventOutboxSentTransport->send($cleanEnvelope);
+        //throw new \Exception('duplicate');
 
         return $envelope;
     }

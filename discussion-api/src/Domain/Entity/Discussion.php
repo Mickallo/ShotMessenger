@@ -4,31 +4,23 @@ namespace App\Domain\Entity;
 
 use App\Domain\Repository\DiscussionRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: DiscussionRepository::class)]
 class Discussion
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: 'uuid')]
+    private ?Uuid $uuid = null;
 
-    #[ORM\Column]
-    private ?int $dossierId = null;
-
-    public function getId(): ?int
+    public function getUuid(): ?Uuid
     {
-        return $this->id;
+        return $this->uuid;
     }
 
-    public function getDossierId(): ?int
+    public function setUuid(Uuid $uuid): static
     {
-        return $this->dossierId;
-    }
-
-    public function setDossierId(int $dossierId): static
-    {
-        $this->dossierId = $dossierId;
+        $this->uuid = $uuid;
 
         return $this;
     }

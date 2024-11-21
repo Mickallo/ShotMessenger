@@ -23,11 +23,11 @@ class CreateDiscussionCommandHandler
     public function __invoke(CreateDiscussionCommand $command): void
     {
         $discussion = new Discussion();
-        $discussion->setDossierId($command->id);
+        $discussion->setUuid( Uuid::fromString($command->uuid));
         $this->entityManager->persist($discussion);
 
         $this->eventBus->dispatch(
-            new DiscussionCreated(Uuid::v4(), $discussion->getId(),$discussion->getDossierId())
+            new DiscussionCreated(Uuid::v7(), $discussion->getUuid()->toString())
         );
     }
 }

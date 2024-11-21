@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Infrastructure\Stamp;
+namespace App\Infrastructure\Outbox\Stamp;
 
 use Symfony\Component\Messenger\Stamp\StampInterface;
 

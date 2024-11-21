@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Infrastructure\Middleware;
+namespace App\Infrastructure\Outbox\Middleware;
 
 use App\Application\Event\Event;
 use App\Infrastructure\Outbox\Entity\EventReceived;

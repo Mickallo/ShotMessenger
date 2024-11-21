@@ -8,19 +8,17 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Id</th>
-                <th>DossierId</th>
+                <th>Uuid</th>
                 <th>actions</th>
             </tr>
         </thead>
         <tbody>
         {% for discussion in discussions %}
             <tr>
-                <td>{{ discussion.id }}</td>
-                <td>{{ discussion.dossierId }}</td>
+                <td>{{ discussion.uuid }}</td>
                 <td>
-                    <a href="{{ path('app_discussion_show', {'id': discussion.id}) }}">show</a>
-                    <a href="{{ path('app_discussion_edit', {'id': discussion.id}) }}">edit</a>
+                    <a href="{{ path('app_discussion_show', {'uuid': discussion.uuid}) }}">show</a>
+                    <a href="{{ path('app_discussion_edit', {'uuid': discussion.uuid}) }}">edit</a>
                 </td>
             </tr>
         {% else %}
