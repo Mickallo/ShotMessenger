@@ -15,6 +15,13 @@ framework:
                         name: request-api.event
                     queues:
                         request-api.event: ~
+
+            ## DOCTRINE TRANSPORT
+            event_outbox:
+                dsn: '%env(OUTBOX_TRANSPORT_DSN)%'
+                failure_transport: event_outbox_failed
+
+            ## Optional
             failed:
                 dsn: '%env(AMQP_TRANSPORT_DSN)%'
                 retry_strategy:
@@ -24,11 +31,6 @@ framework:
                         name: request-api.failed
                     queues:
                         request-api.failed: ~
-
-            ## DOCTRINE TRANSPORT
-            event_outbox:
-                dsn: '%env(OUTBOX_TRANSPORT_DSN)%'
-                failure_transport: event_outbox_failed
             event_outbox_failed:
                 dsn: '%env(OUTBOX_FAILED_TRANSPORT_DSN)%'
                 retry_strategy:
