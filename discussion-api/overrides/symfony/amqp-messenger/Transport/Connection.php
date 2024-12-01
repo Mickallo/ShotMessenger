@@ -622,4 +622,22 @@ class Connection
 
         return $result;
     }
+
+    public function consume(string $queueName, callable $handle): void
+    {
+        $this->clearWhenDisconnected();
+
+        if ($this->autoSetupExchange) {
+            $this->setupExchangeAndQueues();
+        }
+
+        $this->queue($queueName)->consume(
+            function (\AMQPEnvelope $AmqpEnvelope) use ($handle): bool {
+                return $handle($AmqpEnvelope);
+            },
+            null,
+            $queueName.'-consumer'
+        );
+        $this->queue($queueName)->cancel($queueName . '-consumer');
+    }
 }

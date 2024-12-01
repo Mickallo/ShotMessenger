@@ -142,4 +142,58 @@ class AmqpReceiver implements QueueReceiverInterface, MessageCountAwareInterface
 
         return $amqpReceivedStamp;
     }
+
+    // OVERRIDE
+    public function consume(callable $handle): void
+    {
+        $this->consumeFromQueues($this->connection->getQueueNames(), $handle);
+    }
+
+    public function consumeFromQueues(array $queueNames, callable $handle): void
+    {
+        foreach ($queueNames as $queueName) {
+            $this->consumeByQueue($queueName,$handle);
+        }
+    }
+
+    private function consumeByQueue(string $queueName, callable $handle): void
+    {
+        $handle = function (\AMQPEnvelope $amqpEnvelope) use ($handle, $queueName):bool {
+            return $handle($this->decodeEnvelope($amqpEnvelope,$queueName));
+        };
+        try {
+            $this->connection->consume($queueName,$handle);
+        } catch (\AMQPConnectionException) {
+            // Try to reconnect once to accommodate need for one of the nodes in cluster needing to stop serving the
+            // traffic. This may happen for example when one of the nodes in cluster is going into maintenance node.
+            // see https://github.com/php-amqplib/php-amqplib/issues/1161
+            try {
+                $this->connection->queue($queueName)->getConnection()->reconnect();
+                $this->connection->consume($queueName, $handle);
+            } catch (\AMQPException $exception) {
+                throw new TransportException($exception->getMessage(), 0, $exception);
+            }
+        } catch (\AMQPException $exception) {
+            throw new TransportException($exception->getMessage(), 0, $exception);
+        }
+    }
+
+    public function decodeEnvelope(\AMQPEnvelope $amqpEnvelope,string $queueName): Envelope
+    {
+        $body = $amqpEnvelope->getBody();
+
+        try {
+            $envelope = $this->serializer->decode([
+                'body' => false === $body ? '' : $body, // workaround https://github.com/pdezwart/php-amqp/issues/351
+                'headers' => $amqpEnvelope->getHeaders(),
+            ]);
+        } catch (MessageDecodingFailedException $exception) {
+            // invalid message of some type
+            $this->rejectAmqpEnvelope($amqpEnvelope, $queueName);
+
+            throw $exception;
+        }
+
+        return $envelope->with(new AmqpReceivedStamp($amqpEnvelope, $queueName));
+    }
 }
