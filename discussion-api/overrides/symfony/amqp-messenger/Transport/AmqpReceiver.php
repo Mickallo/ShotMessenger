@@ -31,24 +31,38 @@ class AmqpReceiver implements QueueReceiverInterface, MessageCountAwareInterface
 
     public function __construct(
         private Connection $connection,
-        ?SerializerInterface $serializer = null
+        ?SerializerInterface $serializer = null,
     ) {
         $this->serializer = $serializer ?? new PhpSerializer();
     }
 
+    public function get(): iterable
+    {
+        yield from $this->getFromQueues($this->connection->getQueueNames());
+    }
 
+    public function getFromQueues(array $queueNames): iterable
+    {
+        foreach ($queueNames as $queueName) {
+            yield from $this->getEnvelope($queueName);
+        }
+    }
 
     private function getEnvelope(string $queueName): iterable
     {
         try {
-            $amqpEnvelope = $this->connection->get($queueName);
+            // override
+            //$amqpEnvelope = $this->connection->get($queueName);
+            $amqpEnvelope = $this->connection->consumeOne($queueName);
         } catch (\AMQPConnectionException) {
             // Try to reconnect once to accommodate need for one of the nodes in cluster needing to stop serving the
             // traffic. This may happen for example when one of the nodes in cluster is going into maintenance node.
             // see https://github.com/php-amqplib/php-amqplib/issues/1161
             try {
                 $this->connection->queue($queueName)->getConnection()->reconnect();
-                $amqpEnvelope = $this->connection->get($queueName);
+                // override
+                // $amqpEnvelope = $this->connection->get($queueName);
+                $amqpEnvelope = $this->connection->consumeOne($queueName);
             } catch (\AMQPException $exception) {
                 throw new TransportException($exception->getMessage(), 0, $exception);
             }
@@ -127,46 +141,5 @@ class AmqpReceiver implements QueueReceiverInterface, MessageCountAwareInterface
         }
 
         return $amqpReceivedStamp;
-    }
-
-
-
-
-//OVERRIDE
-
-//    public function get(): iterable
-//    {
-//        yield from $this->getFromQueues($this->connection->getQueueNames());
-//    }
-//
-    public function getFromQueues(array $queueNames): iterable
-    {
-        foreach ($queueNames as $queueName) {
-            yield from $this->getEnvelope($queueName);
-        }
-    }
-
-    public function get(): iterable
-    {
-        $queueNames = $this->connection->getQueueNames();
-        file_put_contents('debug.log','start get'.PHP_EOL);
-        foreach ($queueNames as $queueName) {
-            file_put_contents('debug.log',$queueName.PHP_EOL,FILE_APPEND);
-            $serializer = $this->serializer;
-            $this->connection->consumeFromQueue(
-                $queueName,
-                function ($amqpEnvelope) use ($queueName, $serializer) {
-                    file_put_contents('debug.log','callback 2'.PHP_EOL, FILE_APPEND);
-
-                    $body = $amqpEnvelope->getBody();
-                    $envelope = $serializer->decode([
-                        'body' => $body,
-                        'headers' => $amqpEnvelope->getHeaders(),
-                    ]);
-
-                    yield $envelope->with(new AmqpReceivedStamp($amqpEnvelope, $queueName));
-                }
-            );
-        }
     }
 }

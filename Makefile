@@ -10,7 +10,7 @@ install: docker-build docker-up composer-install## install
 
 start: setup-transports migrations-migrate ## start
 
-reroll: docker-down docker-up
+reroll: docker-down docker-up composer-dump cache-clear start
 
 setup-transports:
 	@$(DOCKER_COMPOSE) exec discussion-api php bin/console messenger:setup-transports
@@ -24,6 +24,15 @@ composer-install: ## Installe les dépendances Composer
 	@echo "Installation des dépendances Composer..."
 	@$(DOCKER_COMPOSE) exec discussion-api composer install
 	@$(DOCKER_COMPOSE) exec request-api composer install
+
+composer-dump: ## dump autoload
+	@echo "Installation des dépendances Composer..."
+	@$(DOCKER_COMPOSE) exec discussion-api composer dump-autoload
+	@$(DOCKER_COMPOSE) exec request-api composer dump-autoload
+
+cache-clear: ## cache clear
+	@$(DOCKER_COMPOSE) exec discussion-api php bin/console c:c
+	@$(DOCKER_COMPOSE) exec request-api php bin/console c:c
 
 composer-update: ## Met à jour les dépendances Composer
 	@echo "Update des dépendances Composer..."
@@ -57,18 +66,18 @@ discussion-api-consume-event_outbox:
 discussion-api-consume-event_outbox_failed:
 	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume event_outbox_failed -l 1 -vvv
 discussion-api-consume-event:
-	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume event -l 1 --bus event.bus -vvv
+	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume event --bus event.bus -vvv
 discussion-api-consume-failed:
 	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume failed -l 1 --bus event.bus -vvv
 
 request-api-shell: ## Ouvre un shell sur le container request-api
 	@$(DOCKER_COMPOSE) run request-api bash
 request-api-consume-event_outbox:
-	@$(DOCKER_COMPOSE) exec request-api php bin/console --profile messenger:consume event_outbox -l 1 -vvv
+	@$(DOCKER_COMPOSE) exec request-api php bin/console --profile messenger:consume event_outbox -vvv
 request-api-consume-event_outbox_failed:
 	@$(DOCKER_COMPOSE) exec request-api php bin/console --profile messenger:consume event_outbox_failed -l 1 -vvv
 request-api-consume-event:
-	@$(DOCKER_COMPOSE) exec request-api php bin/console --profile messenger:consume event -l 1 --bus event.bus -vvv
+	@$(DOCKER_COMPOSE) exec request-api php bin/console --profile messenger:consume event --bus event.bus -vvv
 request-api-consume-failed:
 	@$(DOCKER_COMPOSE) exec request-api php bin/console --profile messenger:consume failed -l 1 --bus event.bus -vvv
 

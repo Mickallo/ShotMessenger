@@ -26,8 +26,6 @@ readonly class SendFromOutboxMiddleware implements MiddlewareInterface
         }
 
         // Consume from outbox transport and sent to the event transport
-        $envelope = $stack->next()->handle($envelope, $stack);
-
         $cleanEnvelope = new Envelope($envelope->getMessage());
         // Send to the event transport
         $this->eventTransport->send($cleanEnvelope);

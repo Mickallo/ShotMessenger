@@ -24,6 +24,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 COPY . .
 
+RUN echo 'memory_limit = 2048M' >> /usr/local/etc/php/conf.d/docker-php-memlimit.ini;
+
 # Exposer le port 9000 et démarrer PHP-FPM
 EXPOSE 9000
 CMD ["php-fpm"]

@@ -410,10 +410,10 @@ class Connection
         $action = $isRetryAttempt ? '_retry' : '_delay';
 
         return str_replace(
-            ['%delay%', '%exchange_name%', '%routing_key%'],
-            [$delay, $this->exchangeOptions['name'], $finalRoutingKey ?? ''],
-            $this->connectionOptions['delay']['queue_name_pattern']
-        ).$action;
+                ['%delay%', '%exchange_name%', '%routing_key%'],
+                [$delay, $this->exchangeOptions['name'], $finalRoutingKey ?? ''],
+                $this->connectionOptions['delay']['queue_name_pattern']
+            ).$action;
     }
 
     /**
@@ -595,26 +595,31 @@ class Connection
 
 
     //OVERRIDE
-    public function consumeFromQueue(string $queueName, callable $callback): iterable
+    /**
+     * Consume one message from the specified queue.
+     *
+     * @throws \AMQPException
+     */
+    public function consumeOne(string $queueName): ?\AMQPEnvelope
     {
         $this->clearWhenDisconnected();
 
         if ($this->autoSetupExchange) {
             $this->setupExchangeAndQueues();
         }
+        $result = null;
 
-        $queue = $this->queue($queueName);
+        $consumerTag = $queueName.'-consumer';
+        $this->queue($queueName)->consume(
+            function (\AMQPEnvelope $envelope) use (&$result, $consumerTag): bool {
+                $result = $envelope;
+                return false;
+            },
+            null,
+            $consumerTag
+        );
+        $this->queue($queueName)->cancel($consumerTag);
 
-        file_put_contents('debug.log','before consume'.PHP_EOL, FILE_APPEND);
-
-        $queue->consume($callback);
-        // Configure consume pour déclencher le callback sur chaque message
-        $queue->consume(function (\AMQPEnvelope $envelope, \AMQPQueue $queue) use ($callback) {
-            file_put_contents('debug.log','callback 1'.PHP_EOL, FILE_APPEND);
-            $callback($envelope);
-            file_put_contents('debug.log','after callback'.PHP_EOL, FILE_APPEND);
-            $queue->ack($envelope->getDeliveryTag());
-            return false;
-        });
+        return $result;
     }
 }

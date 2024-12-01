@@ -29,8 +29,14 @@ readonly class CreateRequestCommandHandler
 
         $this->entityManager->persist($request);
 
-        $this->eventBus->dispatch(
-            new RequestCreated(Uuid::v7(), $request->getUuid())
-        );
+//        $this->eventBus->dispatch(
+//            new RequestCreated(Uuid::v7(), $request->getUuid())
+//        );
+
+        for($i=0;$i<5000;$i++){
+            $this->eventBus->dispatch(
+                new RequestCreated(Uuid::v7(), Uuid::v7())
+            );
+        }
     }
 }
