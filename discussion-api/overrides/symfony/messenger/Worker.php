@@ -93,6 +93,7 @@ class Worker
         }
 
         while (!$this->shouldStop) {
+            // Todo receivers
             foreach ($this->receivers as $transportName => $receiver) {
                 $handle = function (Envelope $envelope) use ($transportName) : bool {
                     // TODO - Rate limit

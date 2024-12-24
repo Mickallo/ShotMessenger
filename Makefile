@@ -27,6 +27,8 @@ composer-install: ## Installe les dépendances Composer
 
 composer-dump: ## dump autoload
 	@echo "Installation des dépendances Composer..."
+	@$(DOCKER_COMPOSE) exec discussion-api composer install
+	@$(DOCKER_COMPOSE) exec request-api composer install
 	@$(DOCKER_COMPOSE) exec discussion-api composer dump-autoload
 	@$(DOCKER_COMPOSE) exec request-api composer dump-autoload
 
@@ -67,6 +69,7 @@ discussion-api-consume-event_outbox_failed:
 	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume event_outbox_failed -l 1 -vvv
 discussion-api-consume-event:
 	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume event --bus event.bus -vvv
+#	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume event --bus event.bus -vvv --blocking-mode
 discussion-api-consume-failed:
 	@$(DOCKER_COMPOSE) exec discussion-api php bin/console --profile messenger:consume failed -l 1 --bus event.bus -vvv
 
